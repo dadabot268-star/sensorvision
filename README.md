@@ -491,7 +491,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   }'
 
 # Use the token in subsequent requests
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/devices
 ```
 
@@ -569,16 +569,16 @@ curl -X PUT http://localhost:8080/api/v1/rules/{ruleId} \
 
 ```bash
 # Get all alerts
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/alerts
 
 # Get only unacknowledged alerts
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/alerts?unacknowledgedOnly=true"
 
 # Acknowledge an alert
 curl -X POST \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/alerts/{alertId}/acknowledge
 ```
 
@@ -586,12 +586,12 @@ curl -X POST \
 
 ```bash
 # Get notification preferences
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/notifications/preferences
 
 # Configure email notifications
 curl -X POST \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer example-jwt-token-123" \
   -H "Content-Type: application/json" \
   -d '{
     "channel": "EMAIL",
@@ -604,7 +604,7 @@ curl -X POST \
 
 # Configure SMS notifications
 curl -X POST \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer example-jwt-token-123" \
   -H "Content-Type: application/json" \
   -d '{
     "channel": "SMS",
@@ -616,16 +616,16 @@ curl -X POST \
   http://localhost:8080/api/v1/notifications/preferences
 
 # Get notification history
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/notifications/logs?page=0&size=20"
 
 # Get notification statistics
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/notifications/stats
 
 # Delete a notification channel
 curl -X DELETE \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer example-jwt-token-123" \
   http://localhost:8080/api/v1/notifications/preferences/EMAIL
 ```
 
@@ -633,23 +633,23 @@ curl -X DELETE \
 
 ```bash
 # Get all events with filters
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/events?page=0&size=50"
 
 # Filter by event type
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/events?eventType=ALERT_CREATED&severity=CRITICAL"
 
 # Get recent events (last 24 hours)
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/events/recent?hours=24"
 
 # Get event statistics by type
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/events/statistics/by-type?hours=24"
 
 # Get event statistics by severity
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -H "Authorization: Bearer example-jwt-token-123" \
   "http://localhost:8080/api/v1/events/statistics/by-severity?hours=24"
 ```
 
