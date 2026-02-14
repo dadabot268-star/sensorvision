@@ -434,6 +434,142 @@
     --shadow-2xl: 0 0 0 3px rgba(255, 255, 255, 0.3);
   }
 
+  /* Industrial Cloud Light - Brand theme with teal accents */
+  .indcloud-light {
+    /* Backgrounds */
+    --bg-canvas: #ffffff;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #f0f3f6;
+    --bg-overlay: rgba(255, 255, 255, 0.95);
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --bg-active: rgba(0, 0, 0, 0.08);
+    --bg-disabled: rgba(0, 0, 0, 0.02);
+
+    /* Surface Elevations */
+    --bg-card: #ffffff;
+    --bg-modal: #ffffff;
+    --bg-dropdown: #ffffff;
+
+    /* Text Colors */
+    --text-primary: #1f2937;
+    --text-secondary: #57606a;
+    --text-tertiary: #8b949e;
+    --text-disabled: #9ca3af;
+    --text-link: #3CB9A0;
+    --text-link-hover: #2da88f;
+    --text-danger: #cf222e;
+    --text-success: #1a7f37;
+    --text-warning: #9a6700;
+    --text-info: #3CB9A0;
+
+    /* Borders */
+    --border-default: #d0d7de;
+    --border-muted: #e5e7eb;
+    --border-subtle: #f3f4f6;
+    --border-focus: #3CB9A0;
+    --border-error: #cf222e;
+
+    /* Accents - Brand Teal */
+    --accent-primary: #3CB9A0;
+    --accent-primary-hover: #2da88f;
+    --accent-primary-active: #24947e;
+    --accent-secondary: #6e7781;
+    --accent-success: #1a7f37;
+    --accent-success-hover: #15803d;
+    --accent-warning: #bf8700;
+    --accent-warning-hover: #9a6700;
+    --accent-danger: #cf222e;
+    --accent-danger-hover: #a40e26;
+    --accent-info: #3CB9A0;
+    --accent-info-hover: #2da88f;
+
+    /* Status Colors */
+    --status-success-bg: #d1fae5;
+    --status-success-text: #065f46;
+    --status-warning-bg: #fef3c7;
+    --status-warning-text: #92400e;
+    --status-error-bg: #fee2e2;
+    --status-error-text: #991b1b;
+    --status-info-bg: #d4f4ee;
+    --status-info-text: #0d5747;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Industrial Cloud Dark - Brand theme with navy background and teal accents */
+  .indcloud-dark {
+    /* Backgrounds - Brand Navy */
+    --bg-canvas: #2D3E50;
+    --bg-primary: #34495e;
+    --bg-secondary: #3e5163;
+    --bg-tertiary: #4a5f76;
+    --bg-overlay: rgba(45, 62, 80, 0.95);
+    --bg-hover: rgba(255, 255, 255, 0.08);
+    --bg-active: rgba(255, 255, 255, 0.12);
+    --bg-disabled: rgba(255, 255, 255, 0.04);
+
+    /* Surface Elevations */
+    --bg-card: #34495e;
+    --bg-modal: #34495e;
+    --bg-dropdown: #3e5163;
+
+    /* Text Colors */
+    --text-primary: #e6edf3;
+    --text-secondary: #b4c1d0;
+    --text-tertiary: #8b9aad;
+    --text-disabled: #6e7f91;
+    --text-link: #4ECBA8;
+    --text-link-hover: #6dd6bd;
+    --text-danger: #f85149;
+    --text-success: #3fb950;
+    --text-warning: #d29922;
+    --text-info: #4ECBA8;
+
+    /* Borders */
+    --border-default: #4a5f76;
+    --border-muted: #3e5163;
+    --border-subtle: #34495e;
+    --border-focus: #4ECBA8;
+    --border-error: #f85149;
+
+    /* Accents - Brighter Teal for Dark Mode */
+    --accent-primary: #4ECBA8;
+    --accent-primary-hover: #6dd6bd;
+    --accent-primary-active: #8ae0cf;
+    --accent-secondary: #8b9aad;
+    --accent-success: #3fb950;
+    --accent-success-hover: #56d364;
+    --accent-warning: #d29922;
+    --accent-warning-hover: #e3b341;
+    --accent-danger: #f85149;
+    --accent-danger-hover: #ff6a69;
+    --accent-info: #4ECBA8;
+    --accent-info-hover: #6dd6bd;
+
+    /* Status Colors */
+    --status-success-bg: rgba(63, 185, 80, 0.15);
+    --status-success-text: #3fb950;
+    --status-warning-bg: rgba(210, 153, 34, 0.15);
+    --status-warning-text: #d29922;
+    --status-error-bg: rgba(248, 81, 73, 0.15);
+    --status-error-text: #f85149;
+    --status-info-bg: rgba(78, 203, 168, 0.15);
+    --status-info-text: #4ECBA8;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+    --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.8);
+  }
+
   /* Apply theme transitions only to elements that need them */
   body,
   .glass,
@@ -640,10 +776,10 @@
   /* Gauge glow pulse animation */
   @keyframes gauge-glow-pulse {
     0%, 100% {
-      filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4)) drop-shadow(0 0 20px rgba(16, 185, 129, 0.2));
+      filter: drop-shadow(0 0 8px rgba(60, 185, 160, 0.4)) drop-shadow(0 0 20px rgba(93, 189, 158, 0.2));
     }
     50% {
-      filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.6)) drop-shadow(0 0 35px rgba(16, 185, 129, 0.3));
+      filter: drop-shadow(0 0 15px rgba(60, 185, 160, 0.6)) drop-shadow(0 0 35px rgba(93, 189, 158, 0.3));
     }
   }
 
@@ -695,20 +831,20 @@
   .device-card-hover:hover {
     transform: translateY(-6px) scale(1.01);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(0, 212, 255, 0.1);
+                0 0 0 1px rgba(60, 185, 160, 0.1);
   }
 
   .dark .device-card-hover:hover {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4),
-                0 0 30px rgba(0, 212, 255, 0.1),
-                0 0 0 1px rgba(0, 212, 255, 0.2);
+                0 0 30px rgba(78, 203, 168, 0.1),
+                0 0 0 1px rgba(78, 203, 168, 0.2);
   }
 
   /* Fleet Health Card styling */
   .fleet-health-card {
     background: linear-gradient(135deg,
       var(--bg-card) 0%,
-      rgba(0, 212, 255, 0.02) 100%);
+      rgba(60, 185, 160, 0.02) 100%);
     border: 1px solid var(--border-muted);
     position: relative;
     overflow: hidden;
@@ -721,15 +857,15 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #10b981 0%, #00d4ff 100%);
+    background: linear-gradient(90deg, #3CB9A0 0%, #5DBD9E 100%);
     opacity: 0.8;
   }
 
   .dark .fleet-health-card {
     background: linear-gradient(135deg,
       var(--bg-card) 0%,
-      rgba(0, 212, 255, 0.03) 100%);
-    border-color: rgba(0, 212, 255, 0.1);
+      rgba(78, 203, 168, 0.03) 100%);
+    border-color: rgba(78, 203, 168, 0.1);
   }
 
   /* Activity Feed Card styling */
@@ -782,13 +918,13 @@
 
   .dark .mini-stat-card:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(0, 212, 255, 0.2);
+    border-color: rgba(78, 203, 168, 0.2);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   }
 
   /* Health status label glow */
   .health-status-excellent { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
-  .health-status-good { color: #00d4ff; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+  .health-status-good { color: #3CB9A0; text-shadow: 0 0 20px rgba(60, 185, 160, 0.5); }
   .health-status-fair { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
   .health-status-poor { color: #f97316; text-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
   .health-status-critical { color: #f43f5e; text-shadow: 0 0 20px rgba(244, 63, 94, 0.5); }
@@ -832,7 +968,7 @@
 
   /* Severity border glow effects */
   .severity-glow-info {
-    box-shadow: inset 3px 0 0 #00d4ff, 0 0 15px rgba(0, 212, 255, 0.1);
+    box-shadow: inset 3px 0 0 #3CB9A0, 0 0 15px rgba(60, 185, 160, 0.1);
   }
 
   .severity-glow-warning {
@@ -916,7 +1052,7 @@
      ======================================== */
 
   .gradient-text {
-    background: linear-gradient(135deg, #3b82f6 0%, #10b981 50%, #3b82f6 100%);
+    background: linear-gradient(135deg, #3CB9A0 0%, #5DBD9E 50%, #3CB9A0 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -925,10 +1061,15 @@
   }
 
   .gradient-text-static {
-    background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+    background: linear-gradient(135deg, #3CB9A0 0%, #5DBD9E 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  /* Brand Gradient - Industrial Cloud Teal */
+  .brand-gradient {
+    background: linear-gradient(135deg, #3CB9A0 0%, #5DBD9E 100%);
   }
 
   /* ========================================

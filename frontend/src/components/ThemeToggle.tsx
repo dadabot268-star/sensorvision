@@ -7,6 +7,20 @@ const ThemeToggle: React.FC = () => {
 
   const themes = [
     {
+      value: 'indcloud-light' as const,
+      label: 'Industrial Cloud',
+      description: 'Brand light theme with teal',
+      icon: '☁️',
+      colors: ['#ffffff', '#f8fafb', '#3CB9A0'],
+    },
+    {
+      value: 'indcloud-dark' as const,
+      label: 'Industrial Cloud Dark',
+      description: 'Brand navy with teal accents',
+      icon: '🌊',
+      colors: ['#2D3E50', '#34495e', '#4ECBA8'],
+    },
+    {
       value: 'light-luxury' as const,
       label: 'Light Luxury',
       description: 'Premium light with teal accents',

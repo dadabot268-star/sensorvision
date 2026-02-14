@@ -51,6 +51,10 @@ public class SmsDeliveryLog {
     @Column(name = "delivered_at")
     private Instant deliveredAt;
 
+    @Column(name = "retry_attempts")
+    @Builder.Default
+    private Integer retryAttempts = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

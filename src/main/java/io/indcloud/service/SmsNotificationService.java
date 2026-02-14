@@ -79,6 +79,26 @@ public class SmsNotificationService {
     @Value("${notification.sms.cost-per-message:0.00645}")
     private BigDecimal costPerMessage;
 
+    // Timeout configuration
+    @Value("${notification.sms.timeout.connection-seconds:10}")
+    private int connectionTimeoutSeconds;
+
+    @Value("${notification.sms.timeout.socket-seconds:30}")
+    private int socketTimeoutSeconds;
+
+    // Retry configuration
+    @Value("${notification.sms.retry.max-attempts:3}")
+    private int maxRetryAttempts;
+
+    @Value("${notification.sms.retry.initial-delay-ms:1000}")
+    private long initialRetryDelayMs;
+
+    @Value("${notification.sms.retry.max-delay-ms:10000}")
+    private long maxRetryDelayMs;
+
+    @Value("${notification.sms.retry.multiplier:2.0}")
+    private double retryMultiplier;
+
     private volatile SnsClient snsClient;
 
     private final SmsDeliveryLogRepository smsDeliveryLogRepository;
@@ -125,6 +145,14 @@ public class SmsNotificationService {
 
     private void initializeSns() {
         try {
+            // Configure HTTP client with timeouts
+            software.amazon.awssdk.http.apache.ApacheHttpClient.Builder httpClientBuilder = 
+                software.amazon.awssdk.http.apache.ApacheHttpClient.builder()
+                    .connectionTimeout(java.time.Duration.ofSeconds(connectionTimeoutSeconds))
+                    .socketTimeout(java.time.Duration.ofSeconds(socketTimeoutSeconds))
+                    .maxConnections(100)
+                    .connectionMaxIdleTime(java.time.Duration.ofSeconds(60));
+
             // Use explicit credentials if provided, otherwise use default credential chain
             if (awsAccessKey != null && !awsAccessKey.isBlank()
                 && awsSecretKey != null && !awsSecretKey.isBlank()) {
@@ -133,18 +161,24 @@ public class SmsNotificationService {
                     .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(awsAccessKey, awsSecretKey)
                     ))
+                    .httpClientBuilder(httpClientBuilder)
                     .build();
-                log.info("SMS notifications enabled via AWS SNS with explicit credentials (region: {})", awsRegion);
+                log.info("SMS notifications enabled via AWS SNS with explicit credentials (region: {}, timeout: {}s)", 
+                    awsRegion, socketTimeoutSeconds);
             } else {
                 snsClient = SnsClient.builder()
                     .region(Region.of(awsRegion))
                     .credentialsProvider(DefaultCredentialsProvider.create())
+                    .httpClientBuilder(httpClientBuilder)
                     .build();
-                log.info("SMS notifications enabled via AWS SNS with default credentials (region: {})", awsRegion);
+                log.info("SMS notifications enabled via AWS SNS with default credentials (region: {}, timeout: {}s)", 
+                    awsRegion, socketTimeoutSeconds);
             }
         } catch (Exception e) {
             log.error("Failed to initialize AWS SNS: {}", e.getMessage(), e);
             smsEnabled = false;
+            // Notify administrators about initialization failure
+            notifySmsInitializationFailure("AWS SNS", e.getMessage());
         }
     }
 
@@ -185,6 +219,13 @@ public class SmsNotificationService {
             return null;
         }
 
+        // Validate phone number
+        if (!isValidPhoneNumber(phoneNumber)) {
+            log.error("Invalid phone number format: {}", phoneNumber);
+            return createFailedLog(alert, phoneNumber, message, "INVALID_PHONE_NUMBER", 
+                "Phone number must be in E.164 format (e.g., +15551234567)");
+        }
+
         // Get organization from alert
         Long organizationId = alert.getRule().getDevice().getOrganization().getId();
 
@@ -213,58 +254,175 @@ public class SmsNotificationService {
             return createFailedLog(alert, phoneNumber, message, "BUDGET_EXCEEDED", null);
         }
 
-        try {
-            String messageId;
-            String status;
+        // Try sending SMS with retry logic
+        return sendSmsWithRetry(alert, phoneNumber, message, settings, organizationId);
+    }
 
-            if ("sns".equalsIgnoreCase(smsProvider)) {
-                // Send SMS via AWS SNS
-                PublishResponse response = sendViaSns(phoneNumber, message);
-                messageId = response.messageId();
-                status = "SENT";
-            } else {
-                // Send SMS via Twilio
-                Message twilioMessage = Message.creator(
-                    new PhoneNumber(phoneNumber),
-                    new PhoneNumber(fromNumber),
-                    message
-                ).create();
-                messageId = twilioMessage.getSid();
-                status = twilioMessage.getStatus().name();
+    /**
+     * Validate phone number format (E.164)
+     * Basic validation: starts with +, followed by 1-15 digits
+     */
+    private boolean isValidPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            return false;
+        }
+        
+        // E.164 format: +[country code][subscriber number]
+        // Maximum 15 digits after the +
+        String e164Pattern = "^\\+[1-9]\\d{1,14}$";
+        
+        return phoneNumber.matches(e164Pattern);
+    }
+
+    /**
+     * Send SMS with retry logic for transient failures
+     */
+    private SmsDeliveryLog sendSmsWithRetry(Alert alert, String phoneNumber, String message, 
+                                           OrganizationSmsSettings settings, Long organizationId) {
+        int attempt = 0;
+        Exception lastException = null;
+        
+        while (attempt < maxRetryAttempts) {
+            attempt++;
+            try {
+                String messageId;
+                String status;
+
+                if ("sns".equalsIgnoreCase(smsProvider)) {
+                    // Send SMS via AWS SNS
+                    PublishResponse response = sendViaSns(phoneNumber, message);
+                    messageId = response.messageId();
+                    status = "SENT";
+                } else {
+                    // Send SMS via Twilio
+                    Message twilioMessage = Message.creator(
+                        new PhoneNumber(phoneNumber),
+                        new PhoneNumber(fromNumber),
+                        message
+                    ).create();
+                    messageId = twilioMessage.getSid();
+                    status = twilioMessage.getStatus().name();
+                }
+
+                // Log delivery
+                SmsDeliveryLog deliveryLog = SmsDeliveryLog.builder()
+                    .alert(alert)
+                    .phoneNumber(phoneNumber)
+                    .messageBody(message)
+                    .twilioSid(messageId)  // Reusing field for SNS message ID
+                    .status(status)
+                    .cost(costPerMessage)
+                    .sentAt(Instant.now())
+                    .retryAttempts(attempt - 1)  // Number of retries before success
+                    .build();
+
+                deliveryLog = smsDeliveryLogRepository.save(deliveryLog);
+
+                // Update organization SMS stats
+                updateOrganizationStats(settings, costPerMessage);
+
+                // Update Prometheus metrics
+                smsSentCounter.increment();
+                updateOrganizationMetrics(organizationId, settings);
+
+                log.info("SMS sent to {} for alert {} via {}: ID={} (attempt {})", 
+                    phoneNumber, alert.getId(), smsProvider, messageId, attempt);
+                return deliveryLog;
+
+            } catch (SnsException e) {
+                lastException = e;
+                if (isTransientFailure(e) && attempt < maxRetryAttempts) {
+                    log.warn("Transient SNS failure sending SMS to {} (attempt {}/{}): {}", 
+                        phoneNumber, attempt, maxRetryAttempts, e.getMessage());
+                    waitBeforeRetry(attempt);
+                } else {
+                    break;
+                }
+            } catch (TwilioException e) {
+                lastException = e;
+                if (isTransientFailure(e) && attempt < maxRetryAttempts) {
+                    log.warn("Transient Twilio failure sending SMS to {} (attempt {}/{}): {}", 
+                        phoneNumber, attempt, maxRetryAttempts, e.getMessage());
+                    waitBeforeRetry(attempt);
+                } else {
+                    break;
+                }
+            } catch (Exception e) {
+                lastException = e;
+                log.error("Unexpected error sending SMS to {} (attempt {}): {}", 
+                    phoneNumber, attempt, e.getMessage(), e);
+                break;
             }
+        }
 
-            // Log delivery
-            SmsDeliveryLog deliveryLog = SmsDeliveryLog.builder()
-                .alert(alert)
-                .phoneNumber(phoneNumber)
-                .messageBody(message)
-                .twilioSid(messageId)  // Reusing field for SNS message ID
-                .status(status)
-                .cost(costPerMessage)
-                .sentAt(Instant.now())
-                .build();
+        // All retries failed
+        String errorType = getErrorType(lastException);
+        String errorMessage = lastException != null ? lastException.getMessage() : "Unknown error";
+        
+        log.error("Failed to send SMS to {} after {} attempts: {}", 
+            phoneNumber, attempt, errorMessage);
+        
+        return createFailedLog(alert, phoneNumber, message, errorType, errorMessage);
+    }
 
-            deliveryLog = smsDeliveryLogRepository.save(deliveryLog);
+    /**
+     * Determine if an exception represents a transient failure that can be retried
+     */
+    private boolean isTransientFailure(Exception e) {
+        if (e == null) return false;
+        
+        String message = e.getMessage().toLowerCase();
+        
+        // Transient failures that can be retried
+        String[] transientPatterns = {
+            "timeout", "timed out", "connection", "network", "temporarily",
+            "rate limit", "too many requests", "service unavailable",
+            "internal server error", "gateway timeout", "bad gateway"
+        };
+        
+        for (String pattern : transientPatterns) {
+            if (message.contains(pattern)) {
+                return true;
+            }
+        }
+        
+        // Check for specific status codes for SNS
+        if (e instanceof software.amazon.awssdk.services.sns.model.SnsException) {
+            SnsException snsEx = (SnsException) e;
+            int statusCode = snsEx.statusCode();
+            // 5xx errors are typically transient
+            return statusCode >= 500 && statusCode < 600;
+        }
+        
+        return false;
+    }
 
-            // Update organization SMS stats
-            updateOrganizationStats(settings, costPerMessage);
+    /**
+     * Wait before next retry attempt with exponential backoff
+     */
+    private void waitBeforeRetry(int attempt) {
+        try {
+            long delay = (long) (initialRetryDelayMs * Math.pow(retryMultiplier, attempt - 1));
+            delay = Math.min(delay, maxRetryDelayMs);
+            
+            log.debug("Waiting {}ms before retry attempt {}", delay, attempt + 1);
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Retry interrupted", e);
+        }
+    }
 
-            // Update Prometheus metrics
-            smsSentCounter.increment();
-            updateOrganizationMetrics(organizationId, settings);
-
-            log.info("SMS sent to {} for alert {} via {}: ID={}", phoneNumber, alert.getId(), smsProvider, messageId);
-            return deliveryLog;
-
-        } catch (SnsException e) {
-            log.error("Failed to send SMS via SNS to {}: {}", phoneNumber, e.getMessage(), e);
-            return createFailedLog(alert, phoneNumber, message, "SNS_ERROR", e.getMessage());
-        } catch (TwilioException e) {
-            log.error("Failed to send SMS via Twilio to {}: {}", phoneNumber, e.getMessage(), e);
-            return createFailedLog(alert, phoneNumber, message, "TWILIO_ERROR", e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error sending SMS to {}: {}", phoneNumber, e.getMessage(), e);
-            return createFailedLog(alert, phoneNumber, message, "SYSTEM_ERROR", e.getMessage());
+    /**
+     * Get error type from exception
+     */
+    private String getErrorType(Exception e) {
+        if (e instanceof SnsException) {
+            return "SNS_ERROR";
+        } else if (e instanceof TwilioException) {
+            return "TWILIO_ERROR";
+        } else {
+            return "SYSTEM_ERROR";
         }
     }
 
@@ -343,6 +501,7 @@ public class SmsNotificationService {
 
     /**
      * Reset daily counter if it's a new day
+     * Uses synchronized block to prevent race conditions
      */
     private void resetDailyCounterIfNeeded(OrganizationSmsSettings settings) {
         Instant now = Instant.now();
@@ -350,53 +509,95 @@ public class SmsNotificationService {
 
         // If never reset or if it's been more than 24 hours, reset the daily counter
         if (lastReset == null || now.isAfter(lastReset.plus(24, java.time.temporal.ChronoUnit.HOURS))) {
-            settings.setCurrentDayCount(0);
-            settings.setLastResetDate(now);
-            smsSettingsRepository.save(settings);
-            log.info("Daily SMS counter reset for organization {}", settings.getOrganization().getId());
+            // Use synchronized block to prevent multiple threads from resetting simultaneously
+            synchronized (this) {
+                // Re-fetch settings to ensure we have the latest version
+                OrganizationSmsSettings freshSettings = smsSettingsRepository
+                    .findByOrganizationId(settings.getOrganization().getId())
+                    .orElse(settings);
+                
+                // Double-check condition after synchronization
+                Instant freshLastReset = freshSettings.getLastResetDate();
+                if (freshLastReset == null || now.isAfter(freshLastReset.plus(24, java.time.temporal.ChronoUnit.HOURS))) {
+                    freshSettings.setCurrentDayCount(0);
+                    freshSettings.setLastResetDate(now);
+                    smsSettingsRepository.save(freshSettings);
+                    log.info("Daily SMS counter reset for organization {}", freshSettings.getOrganization().getId());
+                }
+            }
         }
     }
 
     /**
-     * Update organization SMS statistics
+     * Update organization SMS statistics with optimistic locking
      */
     private void updateOrganizationStats(OrganizationSmsSettings settings, BigDecimal cost) {
-        // Calculate previous cost before updating
-        BigDecimal previousCost = settings.getCurrentMonthCost();
+        boolean updated = false;
+        int retryCount = 0;
+        final int maxRetries = 3;
+        
+        while (!updated && retryCount < maxRetries) {
+            try {
+                // Re-fetch settings to get latest version
+                OrganizationSmsSettings freshSettings = smsSettingsRepository
+                    .findByOrganizationId(settings.getOrganization().getId())
+                    .orElse(settings);
+                
+                // Calculate previous cost before updating
+                BigDecimal previousCost = freshSettings.getCurrentMonthCost();
 
-        // Update stats
-        settings.setCurrentMonthCount(settings.getCurrentMonthCount() + 1);
-        settings.setCurrentMonthCost(previousCost.add(cost));
-        settings.setCurrentDayCount(settings.getCurrentDayCount() + 1);
+                // Update stats
+                freshSettings.setCurrentMonthCount(freshSettings.getCurrentMonthCount() + 1);
+                freshSettings.setCurrentMonthCost(previousCost.add(cost));
+                freshSettings.setCurrentDayCount(freshSettings.getCurrentDayCount() + 1);
 
-        // Alert if approaching budget threshold
-        if (settings.getAlertOnBudgetThreshold()) {
-            BigDecimal threshold = settings.getMonthlyBudget()
-                .multiply(new BigDecimal(settings.getBudgetThresholdPercentage()))
-                .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
+                // Alert if approaching budget threshold
+                if (freshSettings.getAlertOnBudgetThreshold()) {
+                    BigDecimal threshold = freshSettings.getMonthlyBudget()
+                        .multiply(new BigDecimal(freshSettings.getBudgetThresholdPercentage()))
+                        .divide(new BigDecimal(100), 2, RoundingMode.HALF_UP);
 
-            // Check if we just crossed the threshold (to avoid repeated emails)
-            boolean wasUnderThreshold = previousCost.compareTo(threshold) < 0;
-            boolean isNowOverThreshold = settings.getCurrentMonthCost().compareTo(threshold) >= 0;
+                    // Check if we just crossed the threshold (to avoid repeated emails)
+                    boolean wasUnderThreshold = previousCost.compareTo(threshold) < 0;
+                    boolean isNowOverThreshold = freshSettings.getCurrentMonthCost().compareTo(threshold) >= 0;
 
-            if (wasUnderThreshold && isNowOverThreshold) {
-                log.warn("Organization {} has reached {}% of SMS budget ({}/{})",
-                    settings.getOrganization().getId(),
-                    settings.getBudgetThresholdPercentage(),
-                    settings.getCurrentMonthCost(),
-                    settings.getMonthlyBudget());
+                    if (wasUnderThreshold && isNowOverThreshold) {
+                        log.warn("Organization {} has reached {}% of SMS budget ({}/{})",
+                            freshSettings.getOrganization().getId(),
+                            freshSettings.getBudgetThresholdPercentage(),
+                            freshSettings.getCurrentMonthCost(),
+                            freshSettings.getMonthlyBudget());
 
-                // Send admin notification via email
-                try {
-                    emailNotificationService.sendSmsBudgetThresholdAlert(settings);
-                } catch (Exception e) {
-                    log.error("Failed to send budget threshold alert email for org {}: {}",
-                        settings.getOrganization().getId(), e.getMessage(), e);
+                        // Send admin notification via email
+                        try {
+                            emailNotificationService.sendSmsBudgetThresholdAlert(freshSettings);
+                        } catch (Exception e) {
+                            log.error("Failed to send budget threshold alert email for org {}: {}",
+                                freshSettings.getOrganization().getId(), e.getMessage(), e);
+                        }
+                    }
+                }
+
+                smsSettingsRepository.save(freshSettings);
+                updated = true;
+                
+            } catch (Exception e) {
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    log.warn("Failed to update SMS stats (attempt {}/{}), retrying: {}",
+                        retryCount, maxRetries, e.getMessage());
+                    try {
+                        Thread.sleep(100 * retryCount); // Exponential backoff
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                } else {
+                    log.error("Failed to update SMS stats after {} attempts: {}",
+                        maxRetries, e.getMessage(), e);
                 }
             }
         }
-
-        smsSettingsRepository.save(settings);
     }
 
     /**
@@ -502,6 +703,12 @@ public class SmsNotificationService {
             return false;
         }
 
+        // Validate phone number
+        if (!isValidPhoneNumber(phoneNumber)) {
+            log.error("Invalid phone number format for verification: {}", phoneNumber);
+            return false;
+        }
+
         try {
             String messageId;
 
@@ -531,6 +738,26 @@ public class SmsNotificationService {
         } catch (Exception e) {
             log.error("Unexpected error sending verification SMS to {}: {}", phoneNumber, e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * Notify administrators about SMS service initialization failure
+     */
+    private void notifySmsInitializationFailure(String provider, String errorMessage) {
+        try {
+            log.error("SMS service initialization failed for {}: {}", provider, errorMessage);
+            
+            // In a production system, you might want to:
+            // 1. Send an email to administrators
+            // 2. Create a system alert
+            // 3. Log to monitoring system
+            
+            // For now, we'll just log at ERROR level which should trigger alerts
+            // if proper monitoring is set up
+            
+        } catch (Exception e) {
+            log.error("Failed to send SMS initialization failure notification: {}", e.getMessage(), e);
         }
     }
 }

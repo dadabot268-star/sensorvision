@@ -30,7 +30,7 @@ vi.mock('react-grid-layout', () => ({
 // Mock child components
 vi.mock('../components/widgets/WidgetRenderer', () => ({
   WidgetRenderer: ({ widget }: { widget: Widget }) => (
-    <div data-testid={`widget-${widget.id}`}>{widget.title}</div>
+    <div data-testid={`widget-${widget.id}`}>{widget.name}</div>
   ),
 }));
 
@@ -58,13 +58,14 @@ describe('Dashboards - Widget Position Update Debouncing', () => {
   const mockWidget: Widget = {
     id: 1,
     dashboardId: 1,
-    type: 'metric',
-    title: 'Test Widget',
+    type: 'METRIC_CARD',
+    name: 'Test Widget',
     config: {},
     positionX: 0,
     positionY: 0,
     width: 4,
     height: 2,
+    aggregation: 'LAST',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

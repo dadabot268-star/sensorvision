@@ -53,10 +53,19 @@ dependencies {
     // AWS SDK v2 for SNS (SMS notifications)
     implementation(platform("software.amazon.awssdk:bom:2.25.16"))
     implementation("software.amazon.awssdk:sns")
+    implementation("software.amazon.awssdk:apache-client")
 
     // Rate limiting with Bucket4j
     implementation("com.bucket4j:bucket4j-core:8.10.1")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    
+    // Resilience4j for circuit breaker, retry, bulkhead patterns
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-retry:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-bulkhead:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-timelimiter:2.2.0")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
 
     // Structured JSON logging for Kibana/ELK integration
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")

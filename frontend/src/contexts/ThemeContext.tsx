@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
-// Extended theme options with dark mode variants and luxury themes
-type ThemeMode = 'light' | 'dark' | 'dark-dimmed' | 'dark-high-contrast' | 'light-luxury' | 'dark-luxury' | 'system';
-type EffectiveTheme = 'light' | 'dark' | 'dark-dimmed' | 'dark-high-contrast' | 'light-luxury' | 'dark-luxury';
+// Extended theme options with dark mode variants, luxury themes, and Industrial Cloud branded themes
+type ThemeMode = 'light' | 'dark' | 'dark-dimmed' | 'dark-high-contrast' | 'light-luxury' | 'dark-luxury' | 'indcloud-light' | 'indcloud-dark' | 'system';
+type EffectiveTheme = 'light' | 'dark' | 'dark-dimmed' | 'dark-high-contrast' | 'light-luxury' | 'dark-luxury' | 'indcloud-light' | 'indcloud-dark';
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -37,8 +37,8 @@ const getSystemTheme = (): 'light' | 'dark' => {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  // Default to light-luxury for premium user experience
-  const [theme, setThemeState] = useState<ThemeMode>('light-luxury');
+  // Default to Industrial Cloud branded theme
+  const [theme, setThemeState] = useState<ThemeMode>('indcloud-light');
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme());
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,7 +66,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     root.classList.add('theme-transitioning');
 
     // Remove all theme classes
-    root.classList.remove('light', 'dark', 'dark-dimmed', 'dark-high-contrast', 'light-luxury', 'dark-luxury');
+    root.classList.remove('light', 'dark', 'dark-dimmed', 'dark-high-contrast', 'light-luxury', 'dark-luxury', 'indcloud-light', 'indcloud-dark');
 
     // Add new theme class
     root.classList.add(effectiveTheme);
@@ -82,7 +82,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Initialize theme from user preference or localStorage
   useEffect(() => {
-    const validThemes = ['light', 'dark', 'dark-dimmed', 'dark-high-contrast', 'light-luxury', 'dark-luxury', 'system'];
+    const validThemes = ['light', 'dark', 'dark-dimmed', 'dark-high-contrast', 'light-luxury', 'dark-luxury', 'indcloud-light', 'indcloud-dark', 'system'];
 
     if (user?.themePreference && validThemes.includes(user.themePreference)) {
       setThemeState(user.themePreference as ThemeMode);

@@ -63,4 +63,9 @@ public interface SmsDeliveryLogRepository extends JpaRepository<SmsDeliveryLog, 
      * Find failed SMS deliveries
      */
     List<SmsDeliveryLog> findByStatusAndSentAtBetween(String status, Instant start, Instant end);
+
+    /**
+     * Find SMS logs created after a specific time (for analytics)
+     */
+    List<SmsDeliveryLog> findByCreatedAtAfter(Instant after);
 }

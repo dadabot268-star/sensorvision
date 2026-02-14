@@ -130,12 +130,36 @@ public class NotificationService {
 
         // Use configured recipients
         for (String recipient : rule.getSmsRecipients()) {
-            // For now, only support explicit E.164 phone numbers
-            // Future enhancement: support "primary" or "all" by linking users to devices
-            phoneNumbers.add(recipient);
+            // Validate phone number format before adding
+            if (isValidPhoneNumber(recipient)) {
+                phoneNumbers.add(recipient);
+            } else {
+                log.warn("Invalid phone number format in rule {} recipients: {}", rule.getId(), recipient);
+                // Optionally, could log this to an error tracking system
+            }
+        }
+
+        if (phoneNumbers.isEmpty() && rule.getSmsRecipients().length > 0) {
+            log.error("Rule {} has SMS recipients but all are invalid phone numbers", rule.getId());
         }
 
         return phoneNumbers;
+    }
+
+    /**
+     * Basic phone number validation (E.164 format)
+     * Consider using a library like libphonenumber for more robust validation
+     */
+    private boolean isValidPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            return false;
+        }
+        
+        // E.164 format: +[country code][subscriber number]
+        // Maximum 15 digits after the +
+        String e164Pattern = "^\\+[1-9]\\d{1,14}$";
+        
+        return phoneNumber.matches(e164Pattern);
     }
 
     /**
