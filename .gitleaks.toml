@@ -7,17 +7,17 @@ description = "AWS Access Key ID"
 regex = '''AKIA[0-9A-Z]{16}'''
 tags = ["key", "AWS"]
 paths = [
-    "!**/*Test.java",
-    "!**/*test.ts",
-    "!**/*test.tsx",
-    "!**/*.test.ts",
-    "!**/*.test.tsx",
-    "!**/*spec.ts",
-    "!**/*spec.tsx",
+    "!.*Test\\.java",
+    "!.*test\\.ts",
+    "!.*test\\.tsx",
+    "!.*\\.test\\.ts",
+    "!.*\\.test\\.tsx",
+    "!.*spec\\.ts",
+    "!.*spec\\.tsx",
     "!docs/",
-    "!**/*.md",
-    "!**/*.example",
-    "!**/*.template"
+    "!.*\\.md",
+    "!.*\\.example",
+    "!.*\\.template"
 ]
 
 [[rules]]
@@ -26,17 +26,17 @@ description = "GitHub Personal Access Token"
 regex = '''ghp_[0-9a-zA-Z]{36}'''
 tags = ["key", "GitHub"]
 paths = [
-    "!**/*Test.java",
-    "!**/*test.ts",
-    "!**/*test.tsx",
-    "!**/*.test.ts",
-    "!**/*.test.tsx",
-    "!**/*spec.ts",
-    "!**/*spec.tsx",
+    "!.*Test\\.java",
+    "!.*test\\.ts",
+    "!.*test\\.tsx",
+    "!.*\\.test\\.ts",
+    "!.*\\.test\\.tsx",
+    "!.*spec\\.ts",
+    "!.*spec\\.tsx",
     "!docs/",
-    "!**/*.md",
-    "!**/*.example",
-    "!**/*.template"
+    "!.*\\.md",
+    "!.*\\.example",
+    "!.*\\.template"
 ]
 
 [[rules]]
@@ -45,17 +45,17 @@ description = "GitHub OAuth Token"
 regex = '''gho_[0-9a-zA-Z]{36}'''
 tags = ["key", "GitHub"]
 paths = [
-    "!**/*Test.java",
-    "!**/*test.ts",
-    "!**/*test.tsx",
-    "!**/*.test.ts",
-    "!**/*.test.tsx",
-    "!**/*spec.ts",
-    "!**/*spec.tsx",
+    "!.*Test\\.java",
+    "!.*test\\.ts",
+    "!.*test\\.tsx",
+    "!.*\\.test\\.ts",
+    "!.*\\.test\\.tsx",
+    "!.*spec\\.ts",
+    "!.*spec\\.tsx",
     "!docs/",
-    "!**/*.md",
-    "!**/*.example",
-    "!**/*.template"
+    "!.*\\.md",
+    "!.*\\.example",
+    "!.*\\.template"
 ]
 
 [[rules]]
@@ -64,34 +64,34 @@ description = "Private Key"
 regex = '''-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----'''
 tags = ["key", "SSH", "PGP"]
 paths = [
-    "!**/*Test.java",
-    "!**/*test.ts",
-    "!**/*test.tsx",
-    "!**/*.test.ts",
-    "!**/*.test.tsx",
-    "!**/*spec.ts",
-    "!**/*spec.tsx",
+    "!.*Test\\.java",
+    "!.*test\\.ts",
+    "!.*test\\.tsx",
+    "!.*\\.test\\.ts",
+    "!.*\\.test\\.tsx",
+    "!.*spec\\.ts",
+    "!.*spec\\.tsx",
     "!docs/",
-    "!**/*.md",
-    "!**/*.example",
-    "!**/*.template"
+    "!.*\\.md",
+    "!.*\\.example",
+    "!.*\\.template"
 ]
 
 # Allowlist for known example/test keys
 [allowlist]
 description = "Allowlist for test files, documentation, and examples"
 paths = [
-    "**/*Test.java",
-    "**/*test.ts",
-    "**/*test.tsx",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*spec.ts",
-    "**/*spec.tsx",
+    ".*Test\\.java",
+    ".*test\\.ts",
+    ".*test\\.tsx",
+    ".*\\.test\\.ts",
+    ".*\\.test\\.tsx",
+    ".*spec\\.ts",
+    ".*spec\\.tsx",
     "docs/",
-    "**/*.md",
-    "**/*.example",
-    "**/*.template"
+    ".*\\.md",
+    ".*\\.example",
+    ".*\\.template"
 ]
 regexes = [
     '''AKIAIOSFODNN7EXAMPLE'''
