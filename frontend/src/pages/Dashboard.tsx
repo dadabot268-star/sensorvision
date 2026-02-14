@@ -252,7 +252,6 @@ export const Dashboard = () => {
         metricsAbortControllerRef.current.abort();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refetch metrics when time range changes

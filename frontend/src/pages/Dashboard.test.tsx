@@ -963,6 +963,7 @@ describe('Dashboard', () => {
     });
 
     it('should not log AbortError when switching time ranges quickly', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       renderDashboard();

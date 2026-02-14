@@ -19,6 +19,10 @@ public class OrganizationSmsSettings {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = false, unique = true)
     private Organization organization;
@@ -49,6 +53,9 @@ public class OrganizationSmsSettings {
 
     @Column(name = "last_reset_date")
     private Instant lastResetDate;
+
+    @Column(name = "last_monthly_reset_date")
+    private Instant lastMonthlyResetDate;
 
     @Column(name = "alert_on_budget_threshold", nullable = false)
     @Builder.Default
