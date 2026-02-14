@@ -149,7 +149,8 @@ export const Notifications: React.FC = () => {
     return date.toLocaleString();
   };
 
-  const channels: NotificationChannel[] = ['EMAIL', 'SMS', 'WEBHOOK', 'IN_APP'];
+  // SMS removed - use Phone Numbers page + Rules for SMS alerts (requires verification)
+  const channels: NotificationChannel[] = ['EMAIL', 'WEBHOOK', 'IN_APP'];
   const severities: AlertSeverity[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
   return (
@@ -359,16 +360,19 @@ export const Notifications: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Destination {(formChannel === 'EMAIL' || formChannel === 'SMS') && '*'}</label>
+                    <label className="block text-sm font-medium text-gray-700">Destination {formChannel === 'EMAIL' && '*'}</label>
                     <input
                       type={formChannel === 'EMAIL' ? 'email' : 'text'}
                       value={formDestination}
                       onChange={(e) => setFormDestination(e.target.value)}
-                      placeholder={formChannel === 'EMAIL' ? 'email@example.com' : formChannel === 'SMS' ? '+1234567890' : 'https://webhook.url'}
+                      placeholder={formChannel === 'EMAIL' ? 'email@example.com' : formChannel === 'WEBHOOK' ? 'https://webhook.url' : ''}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      required={formChannel === 'SMS'}
                     />
-                    <p className="mt-1 text-xs text-gray-500">Leave empty for EMAIL to use your account email</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formChannel === 'EMAIL' ? 'Leave empty to use your account email' :
+                       formChannel === 'WEBHOOK' ? 'Enter webhook URL endpoint' :
+                       'In-app notifications appear in your dashboard'}
+                    </p>
                   </div>
 
                   <div>
