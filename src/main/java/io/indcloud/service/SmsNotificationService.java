@@ -259,6 +259,155 @@ public class SmsNotificationService {
     }
 
     /**
+     * Send direct SMS without an Alert object (for fleet alerts, notifications)
+     * Still respects organization budget and daily limits
+     */
+    public SmsDeliveryLog sendDirectSms(String phoneNumber, String message, Long organizationId) {
+        if (!smsEnabled) {
+            log.warn("SMS notifications disabled, skipping direct SMS to {}", phoneNumber);
+            return null;
+        }
+
+        // Validate phone number
+        if (!isValidPhoneNumber(phoneNumber)) {
+            log.error("Invalid phone number format: {}", phoneNumber);
+            return createFailedLogDirect(phoneNumber, message, "INVALID_PHONE_NUMBER",
+                "Phone number must be in E.164 format (e.g., +15551234567)");
+        }
+
+        // Check organization SMS settings
+        OrganizationSmsSettings settings = smsSettingsRepository
+            .findByOrganizationId(organizationId)
+            .orElse(null);
+
+        if (settings == null || !settings.getEnabled()) {
+            log.warn("SMS not enabled for organization {}", organizationId);
+            return null;
+        }
+
+        // Reset daily counter if it's a new day
+        resetDailyCounterIfNeeded(settings);
+
+        // Check daily limit
+        if (settings.getCurrentDayCount() >= settings.getDailyLimit()) {
+            log.warn("Daily SMS limit reached for organization {}", organizationId);
+            return createFailedLogDirect(phoneNumber, message, "DAILY_LIMIT_EXCEEDED", null);
+        }
+
+        // Check monthly budget
+        if (settings.getCurrentMonthCost().compareTo(settings.getMonthlyBudget()) >= 0) {
+            log.warn("Monthly SMS budget exceeded for organization {}", organizationId);
+            return createFailedLogDirect(phoneNumber, message, "BUDGET_EXCEEDED", null);
+        }
+
+        // Send with retry logic
+        return sendDirectSmsWithRetry(phoneNumber, message, settings, organizationId);
+    }
+
+    /**
+     * Send direct SMS with retry logic
+     */
+    private SmsDeliveryLog sendDirectSmsWithRetry(String phoneNumber, String message,
+                                                   OrganizationSmsSettings settings, Long organizationId) {
+        int attempt = 0;
+        Exception lastException = null;
+
+        while (attempt < maxRetryAttempts) {
+            attempt++;
+            try {
+                String messageId;
+                String status;
+
+                if ("sns".equalsIgnoreCase(smsProvider)) {
+                    PublishResponse response = sendViaSns(phoneNumber, message);
+                    messageId = response.messageId();
+                    status = "SENT";
+                } else {
+                    // Send via Twilio
+                    Message twilioMessage = Message.creator(
+                        new PhoneNumber(phoneNumber),
+                        new PhoneNumber(fromNumber),
+                        message
+                    ).create();
+                    messageId = twilioMessage.getSid();
+                    status = twilioMessage.getStatus().name();
+                }
+
+                // Success - update stats and create log
+                updateOrganizationStats(settings, costPerMessage);
+                smsSentCounter.increment();
+
+                log.info("Direct SMS sent to {} via {} (attempt {}/{}), messageId: {}",
+                    phoneNumber, smsProvider, attempt, maxRetryAttempts, messageId);
+
+                SmsDeliveryLog deliveryLog = SmsDeliveryLog.builder()
+                    .alert(null)  // No alert for direct SMS
+                    .phoneNumber(phoneNumber)
+                    .messageBody(message)
+                    .twilioSid(messageId)
+                    .status(status)
+                    .cost(costPerMessage)
+                    .sentAt(Instant.now())
+                    .retryAttempts(attempt - 1)
+                    .build();
+
+                return smsDeliveryLogRepository.save(deliveryLog);
+
+            } catch (SnsException e) {
+                lastException = e;
+                if (isTransientFailure(e) && attempt < maxRetryAttempts) {
+                    log.warn("Transient SNS failure sending direct SMS to {} (attempt {}/{}): {}",
+                        phoneNumber, attempt, maxRetryAttempts, e.getMessage());
+                    waitBeforeRetry(attempt);
+                } else {
+                    break;
+                }
+            } catch (TwilioException e) {
+                lastException = e;
+                if (isTransientFailure(e) && attempt < maxRetryAttempts) {
+                    log.warn("Transient Twilio failure sending direct SMS to {} (attempt {}/{}): {}",
+                        phoneNumber, attempt, maxRetryAttempts, e.getMessage());
+                    waitBeforeRetry(attempt);
+                } else {
+                    break;
+                }
+            } catch (Exception e) {
+                lastException = e;
+                log.error("Unexpected error sending direct SMS to {} (attempt {}): {}",
+                    phoneNumber, attempt, e.getMessage(), e);
+                break;
+            }
+        }
+
+        // All retries failed
+        smsFailedCounter.increment();
+        String errorType = lastException != null ? getErrorType(lastException) : "UNKNOWN_ERROR";
+        String errorMessage = lastException != null ? lastException.getMessage() : "Unknown error";
+
+        log.error("Direct SMS failed after {} attempts to {}: {}", maxRetryAttempts, phoneNumber, errorMessage);
+
+        return createFailedLogDirect(phoneNumber, message, errorType, errorMessage);
+    }
+
+    /**
+     * Create a failed delivery log without an alert reference
+     */
+    private SmsDeliveryLog createFailedLogDirect(String phoneNumber, String message, String errorCode, String errorMessage) {
+        SmsDeliveryLog deliveryLog = SmsDeliveryLog.builder()
+            .alert(null)
+            .phoneNumber(phoneNumber)
+            .messageBody(message)
+            .status("FAILED")
+            .errorCode(errorCode)
+            .errorMessage(errorMessage)
+            .sentAt(Instant.now())
+            .build();
+
+        smsFailedCounter.increment();
+        return smsDeliveryLogRepository.save(deliveryLog);
+    }
+
+    /**
      * Validate phone number format (E.164)
      * Basic validation: starts with +, followed by 1-15 digits
      */
@@ -500,29 +649,40 @@ public class SmsNotificationService {
     }
 
     /**
-     * Reset daily counter if it's a new day
+     * Reset daily counter if it's a new calendar day (UTC)
      * Uses synchronized block to prevent race conditions
      */
     private void resetDailyCounterIfNeeded(OrganizationSmsSettings settings) {
         Instant now = Instant.now();
         Instant lastReset = settings.getLastResetDate();
 
-        // If never reset or if it's been more than 24 hours, reset the daily counter
-        if (lastReset == null || now.isAfter(lastReset.plus(24, java.time.temporal.ChronoUnit.HOURS))) {
+        // Check if it's a new calendar day (UTC)
+        java.time.LocalDate today = now.atZone(java.time.ZoneOffset.UTC).toLocalDate();
+        java.time.LocalDate lastResetDate = lastReset != null
+            ? lastReset.atZone(java.time.ZoneOffset.UTC).toLocalDate()
+            : null;
+
+        // Reset if never reset or if it's a new calendar day
+        if (lastResetDate == null || today.isAfter(lastResetDate)) {
             // Use synchronized block to prevent multiple threads from resetting simultaneously
             synchronized (this) {
                 // Re-fetch settings to ensure we have the latest version
                 OrganizationSmsSettings freshSettings = smsSettingsRepository
                     .findByOrganizationId(settings.getOrganization().getId())
                     .orElse(settings);
-                
+
                 // Double-check condition after synchronization
                 Instant freshLastReset = freshSettings.getLastResetDate();
-                if (freshLastReset == null || now.isAfter(freshLastReset.plus(24, java.time.temporal.ChronoUnit.HOURS))) {
+                java.time.LocalDate freshLastResetDate = freshLastReset != null
+                    ? freshLastReset.atZone(java.time.ZoneOffset.UTC).toLocalDate()
+                    : null;
+
+                if (freshLastResetDate == null || today.isAfter(freshLastResetDate)) {
                     freshSettings.setCurrentDayCount(0);
                     freshSettings.setLastResetDate(now);
                     smsSettingsRepository.save(freshSettings);
-                    log.info("Daily SMS counter reset for organization {}", freshSettings.getOrganization().getId());
+                    log.info("Daily SMS counter reset for organization {} (new day: {})",
+                        freshSettings.getOrganization().getId(), today);
                 }
             }
         }

@@ -292,16 +292,20 @@ public class NotificationService {
 
     /**
      * Send direct SMS without checking user preferences (for global/fleet alerts)
-     * This bypasses normal notification preferences and sends SMS directly
+     * Still respects organization budget and daily limits
      */
     @Async
     public void sendDirectSms(String phoneNumber, String message, Long organizationId) {
         log.info("Sending direct SMS to {} for organization {}", phoneNumber, organizationId);
 
         try {
-            // Send SMS directly through SMS service
-            smsService.sendVerificationSms(phoneNumber, message);
-            log.info("Direct SMS sent successfully to {}", phoneNumber);
+            // Send SMS with budget/limit checks (unlike verification SMS)
+            SmsDeliveryLog result = smsService.sendDirectSms(phoneNumber, message, organizationId);
+            if (result != null && "SENT".equals(result.getStatus())) {
+                log.info("Direct SMS sent successfully to {}", phoneNumber);
+            } else if (result != null) {
+                log.warn("Direct SMS failed for {}: {}", phoneNumber, result.getErrorCode());
+            }
         } catch (Exception e) {
             log.error("Failed to send direct SMS to {}: {}", phoneNumber, e.getMessage(), e);
         }
