@@ -78,14 +78,8 @@ paths = [
 ]
 
 # Allowlist for known example/test keys
-[[allowlist]]
-description = "AWS Example Key"
-regexes = [
-    '''AKIAIOSFODNN7EXAMPLE'''
-]
-
-[[allowlist]]
-description = "Test files"
+[allowlist]
+description = "Allowlist for test files, documentation, and examples"
 paths = [
     "**/*Test.java",
     "**/*test.ts",
@@ -93,19 +87,12 @@ paths = [
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*spec.ts",
-    "**/*spec.tsx"
-]
-
-[[allowlist]]
-description = "Documentation"
-paths = [
+    "**/*spec.tsx",
     "docs/",
-    "**/*.md"
-]
-
-[[allowlist]]
-description = "Example/template files"
-paths = [
+    "**/*.md",
     "**/*.example",
     "**/*.template"
+]
+regexes = [
+    '''AKIAIOSFODNN7EXAMPLE'''
 ]
