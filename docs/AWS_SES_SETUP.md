@@ -120,7 +120,7 @@ SES provides SMTP endpoints that work with Spring Boot's JavaMailSender.
 4. Click **"Create"**
 5. **Save the credentials** (they are shown only once):
    ```
-   SMTP Username: AKIA...  (20 characters)
+   SMTP Username: EXAMPLE_AKIA...  (20 characters)
    SMTP Password: BPwJ...  (44 characters)
    ```
 
@@ -143,7 +143,7 @@ Add these environment variables to your production `.env` file or docker-compose
 # AWS SES Configuration
 SMTP_HOST=email-smtp.us-west-2.amazonaws.com
 SMTP_PORT=587
-SMTP_USERNAME=AKIA...  # Your SMTP username from Step 3
+SMTP_USERNAME=EXAMPLE_AKIA...  # Your SMTP username from Step 3
 SMTP_PASSWORD=BPwJ...  # Your SMTP password from Step 3
 EMAIL_FROM=noreply@35.88.65.186.nip.io  # Verified email from Step 1
 EMAIL_ENABLED=true
@@ -358,7 +358,7 @@ spring.mail.password=app-password
 ```properties
 spring.mail.host=email-smtp.us-west-2.amazonaws.com
 spring.mail.port=587
-spring.mail.username=AKIA...
+spring.mail.username=EXAMPLE_AKIA...
 spring.mail.password=BPwJ...
 ```
 

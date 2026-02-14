@@ -98,7 +98,7 @@ import hashlib
 import base64
 
 # Replace with your AWS Secret Access Key
-SECRET = "YOUR_AWS_SECRET_ACCESS_KEY"
+SECRET = "EXAMPLE_AWS_SECRET_ACCESS_KEY"
 DATE = "11111111"
 SERVICE = "ses"
 MESSAGE = "SendRawEmail"

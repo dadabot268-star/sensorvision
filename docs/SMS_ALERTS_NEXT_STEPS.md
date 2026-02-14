@@ -276,7 +276,7 @@ ADMIN_EMAIL=admin@yourcompany.com
 EMAIL_ENABLED=true
 SMTP_HOST=email-smtp.us-west-2.amazonaws.com
 SMTP_PORT=587
-SMTP_USERNAME=AKIAxxxxxxxxxxxxx
+SMTP_USERNAME=EXAMPLE_AKIAxxxxxxxxxxxxx
 SMTP_PASSWORD=your_ses_smtp_password
 EMAIL_FROM=noreply@yourcompany.com
 
