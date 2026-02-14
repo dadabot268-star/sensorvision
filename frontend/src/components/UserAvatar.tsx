@@ -54,10 +54,10 @@ export const UserAvatar = ({ user, size = 'md', editable = false, onClick }: Use
         rounded-full
         flex items-center justify-center
         overflow-hidden
-        border-2 border-gray-200
-        bg-gradient-to-br from-blue-100 to-blue-50
+        border-2 border-default
+        bg-secondary
         transition-all duration-200
-        ${editable ? 'cursor-pointer hover:border-blue-300 hover:shadow-md' : ''}
+        ${editable ? 'cursor-pointer hover:border-link hover:shadow-md' : ''}
         ${onClick ? 'cursor-pointer' : ''}
       `}
       onClick={onClick}

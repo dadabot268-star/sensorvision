@@ -36,11 +36,15 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
     setCapturingScreenshot(true);
     setError(null);
 
+    const modal = document.querySelector('[data-modal="submit-issue"]') as HTMLElement | null;
+    const previousDisplay = modal?.style.display;
+    let wasHidden = false;
+
     try {
       // Hide the modal temporarily to capture the page behind it
-      const modal = document.querySelector('[data-modal="submit-issue"]') as HTMLElement;
       if (modal) {
         modal.style.display = 'none';
+        wasHidden = true;
       }
 
       // Wait a moment for the page to re-render without modal
@@ -56,15 +60,13 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
       // Convert to base64
       const dataUrl = canvas.toDataURL('image/png');
       setScreenshot(dataUrl);
-
-      // Show the modal again
-      if (modal) {
-        modal.style.display = 'flex';
-      }
     } catch (err) {
       console.error('Failed to capture screenshot:', err);
       setError('Failed to capture screenshot. You can still submit without it.');
     } finally {
+      if (modal && wasHidden) {
+        modal.style.display = previousDisplay || 'flex';
+      }
       setCapturingScreenshot(false);
     }
   };
@@ -140,12 +142,12 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-primary rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-default">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Report an Issue</h2>
+          <h2 className="text-2xl font-bold text-primary">Report an Issue</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-secondary hover:text-primary"
             disabled={loading}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,12 +157,12 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
         </div>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mb-4 p-4 bg-[var(--status-error-bg)] border border-default rounded-lg">
             <div className="flex">
-              <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-[var(--status-error-text)] mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <div className="text-sm text-red-800 whitespace-pre-wrap">{error}</div>
+              <div className="text-sm text-[var(--status-error-text)] whitespace-pre-wrap">{error}</div>
             </div>
           </div>
         )}
@@ -168,8 +170,8 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-secondary mb-1">
+              Title <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -177,7 +179,7 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
               maxLength={255}
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-default rounded-md bg-primary text-primary focus:outline-none focus:ring-2 focus:ring-link focus:border-link"
               placeholder="Brief summary of the issue"
               disabled={loading}
             />
@@ -186,13 +188,13 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
           {/* Category and Severity */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-secondary mb-1">
+                Category <span className="text-danger">*</span>
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as IssueCategory })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-default rounded-md bg-primary text-primary focus:outline-none focus:ring-2 focus:ring-link focus:border-link"
                 disabled={loading}
               >
                 {categoryOptions.map((option) => (
@@ -204,13 +206,13 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Severity <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-secondary mb-1">
+                Severity <span className="text-danger">*</span>
               </label>
               <select
                 value={formData.severity}
                 onChange={(e) => setFormData({ ...formData, severity: e.target.value as IssueSeverity })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-default rounded-md bg-primary text-primary focus:outline-none focus:ring-2 focus:ring-link focus:border-link"
                 disabled={loading}
               >
                 {severityOptions.map((option) => (
@@ -224,8 +226,8 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-secondary mb-1">
+              Description <span className="text-danger">*</span>
             </label>
             <textarea
               required
@@ -233,18 +235,18 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
               rows={6}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-default rounded-md bg-primary text-primary focus:outline-none focus:ring-2 focus:ring-link focus:border-link"
               placeholder="Please provide detailed information about the issue, including steps to reproduce if applicable..."
               disabled={loading}
             />
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-secondary mt-1">
               {formData.description.length} / 5000 characters
             </div>
           </div>
 
           {/* Screenshot Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               Screenshot (Optional)
             </label>
 
@@ -253,7 +255,7 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
                 type="button"
                 onClick={captureScreenshot}
                 disabled={capturingScreenshot || loading}
-                className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-link bg-hover rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -262,10 +264,10 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
                 {capturingScreenshot ? 'Capturing...' : 'Capture Screenshot'}
               </button>
             ) : (
-              <div className="border border-gray-300 rounded-md p-3">
+              <div className="border border-default rounded-md p-3">
                 <div className="flex items-start justify-between mb-2">
-                  <span className="text-sm text-gray-600 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <span className="text-sm text-secondary flex items-center gap-2">
+                    <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     Screenshot captured
@@ -273,7 +275,7 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setScreenshot(null)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    className="text-danger hover:text-[var(--status-error-text)] text-sm"
                     disabled={loading}
                   >
                     Remove
@@ -282,18 +284,18 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
                 <img
                   src={screenshot}
                   alt="Screenshot preview"
-                  className="w-full h-auto max-h-64 object-contain rounded border border-gray-200"
+                  className="w-full h-auto max-h-64 object-contain rounded border border-default"
                 />
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-secondary mt-2">
               A screenshot helps us understand the issue better. The modal will be hidden during capture.
             </p>
           </div>
 
           {/* Rate Limit Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-800">
+          <div className="bg-hover border border-default rounded-lg p-3">
+            <p className="text-sm text-secondary">
               <strong>Note:</strong> You can submit up to 3 issue reports every 24 hours.
               This helps us manage support requests effectively.
             </p>
@@ -304,14 +306,14 @@ export const SubmitIssueModal: React.FC<SubmitIssueModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
+              className="px-4 py-2 text-secondary bg-secondary rounded-md hover:bg-hover disabled:opacity-50"
               disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-white bg-link rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading || capturingScreenshot}
             >
               {loading ? 'Submitting...' : 'Submit Issue'}

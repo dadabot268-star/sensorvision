@@ -169,7 +169,7 @@ export const Register: React.FC = () => {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#f7f8fa]">
       {/* Elegant Light Background with Subtle Gradient Mesh */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         {/* Primary gradient - soft blue-teal wash */}
         <div
           className="absolute inset-0"
@@ -214,9 +214,9 @@ export const Register: React.FC = () => {
         />
       </div>
 
-      <div className="relative min-h-screen flex">
+      <div className="relative min-h-screen flex pointer-events-auto">
         {/* Left Panel - Hero Branding */}
-        <div className="hidden lg:flex lg:w-[55%] xl:w-[58%] flex-col justify-between p-12 xl:p-16 2xl:p-20">
+        <div className="hidden lg:flex lg:w-[55%] xl:w-[58%] flex-col justify-between p-12 xl:p-16 2xl:p-20 z-10">
           {/* Logo */}
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="relative">
@@ -294,7 +294,7 @@ export const Register: React.FC = () => {
         </div>
 
         {/* Right Panel - Register Form */}
-        <div className="w-full lg:w-[45%] xl:w-[42%] flex items-center justify-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
+        <div className="w-full lg:w-[45%] xl:w-[42%] flex items-center justify-center p-6 sm:p-10 lg:p-12 overflow-y-auto z-10">
           <div className="w-full max-w-[420px]">
             {/* Mobile Logo */}
             <div className="lg:hidden flex items-center justify-center gap-3 mb-8">

@@ -77,13 +77,13 @@ interface NavigationSection {
 
 const navigationSections: NavigationSection[] = [
   {
-    name: 'GETTING STARTED',
+    name: 'CONNECT & SEND DATA',
     icon: Rocket,
     iconColor: 'text-purple-600',
     adminOnly: false,
     excludeForAdmin: true, // Hide from admins who don't need onboarding
     items: [
-      { name: 'Integration Wizard', href: '/integration-wizard', icon: Zap, adminOnly: false },
+      { name: 'Connect a Device', href: '/integration-wizard', icon: Zap, adminOnly: false },
       { name: 'How It Works', href: '/how-it-works', icon: BookOpen, adminOnly: false },
     ],
   },
@@ -94,12 +94,12 @@ const navigationSections: NavigationSection[] = [
     adminOnly: false,
     items: [
       { name: 'Dashboard', href: '/', icon: Home, adminOnly: false },
-      { name: 'Widget Dashboards', href: '/dashboards', icon: LayoutGrid, adminOnly: false, excludeForAdmin: true },
+      { name: 'Dashboards', href: '/dashboards', icon: LayoutGrid, adminOnly: false, excludeForAdmin: true },
       { name: 'Analytics', href: '/analytics', icon: BarChart3, adminOnly: false, excludeForAdmin: true },
     ],
   },
   {
-    name: 'DEVICES & DATA',
+    name: 'DEVICES & INGESTION',
     icon: Cpu,
     iconColor: 'text-green-600',
     adminOnly: false,
@@ -144,19 +144,19 @@ const navigationSections: NavigationSection[] = [
     ],
   },
   {
-    name: 'DATA MANAGEMENT',
+    name: 'DATA OPERATIONS',
     icon: Database,
     iconColor: 'text-purple-600',
     adminOnly: false,
     excludeForAdmin: true, // Hide from admin dashboard - user-only feature
     items: [
-      { name: 'Data Ingestion', href: '/data-ingestion', icon: Upload, adminOnly: false, excludeForAdmin: true },
-      { name: 'Data Import', href: '/data-import', icon: FileUp, adminOnly: false, excludeForAdmin: true },
+      { name: 'Send Data', href: '/data-ingestion', icon: Upload, adminOnly: false, excludeForAdmin: true },
+      { name: 'Bulk Import', href: '/data-import', icon: FileUp, adminOnly: false, excludeForAdmin: true },
       { name: 'Data Export', href: '/data-export', icon: Download, adminOnly: false, excludeForAdmin: true },
       { name: 'Variables', href: '/variables', icon: Database, adminOnly: false, excludeForAdmin: true },
       { name: 'Data Retention', href: '/data-retention', icon: Archive, adminOnly: false, excludeForAdmin: true },
-      { name: 'Webhook Tester', href: '/webhook-tester', icon: Webhook, adminOnly: false, excludeForAdmin: true },
-      { name: 'API Playground', href: '/api-playground', icon: Terminal, adminOnly: false, excludeForAdmin: true },
+      { name: 'Webhook Sandbox', href: '/webhook-tester', icon: Webhook, adminOnly: false, excludeForAdmin: true },
+      { name: 'API Explorer', href: '/api-playground', icon: Terminal, adminOnly: false, excludeForAdmin: true },
     ],
   },
   {
@@ -205,7 +205,14 @@ export const LayoutV1 = ({ children }: LayoutProps) => {
   // Initialize collapsed sections from localStorage, default to all expanded
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('collapsedSections');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
+    if (!saved) return new Set();
+    try {
+      const parsed = JSON.parse(saved);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      localStorage.removeItem('collapsedSections');
+      return new Set();
+    }
   });
 
   // Track which section is being hovered
@@ -295,12 +302,15 @@ export const LayoutV1 = ({ children }: LayoutProps) => {
               const isExpanded = !isCollapsed || isHovered; // Expand if not collapsed OR if being hovered
 
               return (
-                <div key={section.name} className="mb-4">
+                <div
+                  key={section.name}
+                  className="mb-4"
+                  onMouseEnter={() => setHoveredSection(section.name)}
+                  onMouseLeave={() => setHoveredSection(null)}
+                >
                   {/* Section Header */}
                   <button
                     onClick={() => toggleSection(section.name)}
-                    onMouseEnter={() => setHoveredSection(section.name)}
-                    onMouseLeave={() => setHoveredSection(null)}
                     className="w-full flex items-center px-3 py-2 mb-1 text-xs font-semibold text-secondary hover:text-primary hover:bg-hover rounded-md transition-all duration-200 group"
                   >
                     <SectionIcon className={clsx('h-4 w-4 mr-2 flex-shrink-0', section.iconColor)} />
@@ -316,7 +326,7 @@ export const LayoutV1 = ({ children }: LayoutProps) => {
                   <div
                     className={clsx(
                       'overflow-hidden transition-all duration-300 ease-in-out',
-                      isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                      isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
                     )}
                   >
                     <div className="space-y-0.5">

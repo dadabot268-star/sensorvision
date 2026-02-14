@@ -23,6 +23,7 @@ import {
 import { Card, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { clsx } from 'clsx';
+import { formatTimeAgo } from '../utils/timeUtils';
 
 // Time range options for metrics panel
 const TIME_RANGES = [
@@ -109,9 +110,9 @@ export const Dashboard = () => {
       const { start, end } = getTimeRange(timeRange);
 
       // Initialize metrics with accumulators for proper averaging
-      const powerAcc = { sum: 0, min: Number.MAX_VALUE, max: Number.MIN_VALUE, count: 0 };
-      const voltageAcc = { sum: 0, min: Number.MAX_VALUE, max: Number.MIN_VALUE, count: 0 };
-      const currentAcc = { sum: 0, min: Number.MAX_VALUE, max: Number.MIN_VALUE, count: 0 };
+      const powerAcc = { sum: 0, min: Number.MAX_VALUE, max: -Number.MAX_VALUE, count: 0 };
+      const voltageAcc = { sum: 0, min: Number.MAX_VALUE, max: -Number.MAX_VALUE, count: 0 };
+      const currentAcc = { sum: 0, min: Number.MAX_VALUE, max: -Number.MAX_VALUE, count: 0 };
 
       // Fetch aggregated data for each device and aggregate across all devices
       const devicePromises = deviceList.map(async (device) => {
@@ -181,19 +182,19 @@ export const Dashboard = () => {
         power: {
           avg: powerAcc.count > 0 ? powerAcc.sum / powerAcc.count : null,
           min: powerAcc.min !== Number.MAX_VALUE ? powerAcc.min : null,
-          max: powerAcc.max !== Number.MIN_VALUE ? powerAcc.max : null,
+          max: powerAcc.max !== -Number.MAX_VALUE ? powerAcc.max : null,
           count: powerAcc.count,
         },
         voltage: {
           avg: voltageAcc.count > 0 ? voltageAcc.sum / voltageAcc.count : null,
           min: voltageAcc.min !== Number.MAX_VALUE ? voltageAcc.min : null,
-          max: voltageAcc.max !== Number.MIN_VALUE ? voltageAcc.max : null,
+          max: voltageAcc.max !== -Number.MAX_VALUE ? voltageAcc.max : null,
           count: voltageAcc.count,
         },
         current: {
           avg: currentAcc.count > 0 ? currentAcc.sum / currentAcc.count : null,
           min: currentAcc.min !== Number.MAX_VALUE ? currentAcc.min : null,
-          max: currentAcc.max !== Number.MIN_VALUE ? currentAcc.max : null,
+          max: currentAcc.max !== -Number.MAX_VALUE ? currentAcc.max : null,
           count: currentAcc.count,
         },
       };
@@ -346,25 +347,12 @@ export const Dashboard = () => {
           <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
           <p className="text-secondary mt-1">Real-time IoT monitoring overview</p>
         </div>
-        {/* Connection Status */}
-        <div className="flex items-center space-x-2 px-3 py-2 bg-secondary rounded-lg border border-default">
-          <div className={clsx(
-            'w-2 h-2 rounded-full',
-            connectionStatus === 'Open' ? 'bg-success animate-pulse' : 'bg-danger'
-          )} />
-          <span className={clsx(
-            'text-sm font-medium font-mono',
-            connectionStatus === 'Open' ? 'text-success' : 'text-danger'
-          )}>
-            {connectionStatus === 'Open' ? 'Connected: Live' : 'Disconnected'}
-          </span>
-        </div>
       </div>
 
       {/* Top Section: Fleet Health + Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fleet Health Panel */}
-        <FleetHealthGauge devices={devices} />
+        <FleetHealthGauge devices={devices} latestTelemetry={latestTelemetry} />
 
         {/* Activity Timeline */}
         <ActivityTimeline maxItems={10} refreshIntervalMs={30000} />
@@ -536,14 +524,53 @@ export const Dashboard = () => {
       {/* Real-time Chart */}
       <Card>
         <CardBody>
-          <h2 className="text-lg font-semibold text-primary mb-4">Real-time Telemetry</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-primary">Real-time Telemetry</h2>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-secondary rounded-lg border border-default">
+                <div className={clsx(
+                  'w-2 h-2 rounded-full',
+                  connectionStatus === 'Open' ? 'bg-success animate-pulse' : 'bg-danger'
+                )} />
+                <span className={clsx(
+                  'text-xs font-medium font-mono',
+                  connectionStatus === 'Open' ? 'text-success' : 'text-danger'
+                )}>
+                  {connectionStatus === 'Open'
+                    ? 'Realtime feed: Connected'
+                    : connectionStatus === 'Connecting'
+                      ? 'Realtime feed: Connecting'
+                      : 'Realtime feed: Disconnected'}
+                </span>
+              </div>
+              <span className="text-xs text-secondary font-mono">
+                {lastMessage?.timestamp
+                  ? `Last update: ${formatTimeAgo(lastMessage.timestamp)}`
+                  : 'No telemetry yet'}
+              </span>
+            </div>
+          </div>
           {Object.keys(latestTelemetry).length > 0 ? (
             <RealTimeChart telemetryData={Object.values(latestTelemetry)} />
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-secondary">
               <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Waiting for real-time telemetry data...</p>
-              <p className="text-sm mt-1">Data will appear here when devices send telemetry via WebSocket</p>
+              {connectionStatus === 'Open' ? (
+                <>
+                  <p>Feed connected. Waiting for devices to report.</p>
+                  <p className="text-sm mt-1">Data will appear here when devices send telemetry via WebSocket</p>
+                </>
+              ) : connectionStatus === 'Connecting' ? (
+                <>
+                  <p>Feed connecting...</p>
+                  <p className="text-sm mt-1">Live updates will begin once the feed connects</p>
+                </>
+              ) : (
+                <>
+                  <p>Feed disconnected. Reconnecting...</p>
+                  <p className="text-sm mt-1">Live updates will resume once the feed reconnects</p>
+                </>
+              )}
             </div>
           )}
         </CardBody>

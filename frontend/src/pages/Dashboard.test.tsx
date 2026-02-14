@@ -42,7 +42,7 @@ vi.mock('../components/GettingStarted', () => ({
 }));
 
 vi.mock('../components/FleetHealthGauge', () => ({
-  FleetHealthGauge: () => <div data-testid="fleet-health-gauge">Fleet Health</div>,
+  FleetHealthGauge: () => <div data-testid="fleet-health-gauge">Reporting Coverage</div>,
 }));
 
 vi.mock('../components/ActivityTimeline', () => ({
@@ -286,7 +286,7 @@ describe('Dashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Waiting for real-time telemetry data...')).toBeInTheDocument();
+        expect(screen.getByText('Feed connected. Waiting for devices to report.')).toBeInTheDocument();
         expect(screen.getByText('Data will appear here when devices send telemetry via WebSocket')).toBeInTheDocument();
       });
     });
@@ -305,7 +305,7 @@ describe('Dashboard', () => {
       const { rerender } = renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Waiting for real-time telemetry data...')).toBeInTheDocument();
+        expect(screen.getByText('Feed connected. Waiting for devices to report.')).toBeInTheDocument();
       });
 
       // Simulate WebSocket message arrival
@@ -323,7 +323,7 @@ describe('Dashboard', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('real-time-chart')).toBeInTheDocument();
-        expect(screen.queryByText('Waiting for real-time telemetry data...')).not.toBeInTheDocument();
+        expect(screen.queryByText('Feed connected. Waiting for devices to report.')).not.toBeInTheDocument();
       });
     });
 
@@ -356,7 +356,7 @@ describe('Dashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Connected: Live')).toBeInTheDocument();
+        expect(screen.getByText('Realtime feed: Connected')).toBeInTheDocument();
       });
     });
 
@@ -370,7 +370,7 @@ describe('Dashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Disconnected')).toBeInTheDocument();
+        expect(screen.getByText('Realtime feed: Disconnected')).toBeInTheDocument();
       });
     });
 

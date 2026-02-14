@@ -129,13 +129,13 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="bg-primary rounded-lg shadow-xl max-w-md w-full mx-4 border border-default">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Upload Avatar</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-default">
+          <h2 className="text-xl font-semibold text-primary">Upload Avatar</h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-secondary hover:text-primary transition-colors"
             disabled={uploading}
           >
             <X className="h-5 w-5" />
@@ -149,8 +149,8 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
             <div className="mb-2">
               <UserAvatar user={user} size="lg" />
             </div>
-            <p className="text-sm text-gray-600">{user.username}</p>
-            <p className="text-xs text-gray-500">{user.organizationName}</p>
+            <p className="text-sm text-secondary">{user.username}</p>
+            <p className="text-xs text-tertiary">{user.organizationName}</p>
           </div>
 
           {/* Upload Area */}
@@ -159,15 +159,15 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
               {...getRootProps()}
               className={`
                 border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+                ${isDragActive ? 'border-link bg-hover' : 'border-default hover:border-link'}
               `}
             >
               <input {...getInputProps()} />
-              <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-sm text-gray-600 mb-1">
+              <Upload className="h-12 w-12 mx-auto mb-4 text-secondary" />
+              <p className="text-sm text-secondary mb-1">
                 {isDragActive ? 'Drop the image here' : 'Drag & drop an image, or click to select'}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-tertiary">
                 JPG, PNG, or WebP • Max 2MB
               </p>
             </div>
@@ -186,9 +186,9 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
                       setSelectedFile(null);
                       setPreview(null);
                     }}
-                    className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
+                    className="absolute top-2 right-2 bg-secondary rounded-full p-2 shadow-md hover:bg-hover transition-colors"
                   >
-                    <X className="h-4 w-4 text-gray-600" />
+                    <X className="h-4 w-4 text-secondary" />
                   </button>
                 )}
               </div>
@@ -197,7 +197,7 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
               <button
                 onClick={handleUpload}
                 disabled={uploading || success}
-                className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center px-4 py-2 bg-link text-white rounded-md hover:bg-blue-700 disabled:bg-secondary disabled:cursor-not-allowed transition-colors"
               >
                 {success ? (
                   <>
@@ -221,9 +221,9 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
 
           {/* Error Message */}
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
-              <AlertCircle className="h-5 w-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="mt-4 p-3 bg-[var(--status-error-bg)] border border-default rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 text-[var(--status-error-text)] mr-2 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[var(--status-error-text)]">{error}</p>
             </div>
           )}
 
@@ -232,7 +232,7 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
             <button
               onClick={handleDelete}
               disabled={uploading}
-              className="w-full mt-4 flex items-center justify-center px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full mt-4 flex items-center justify-center px-4 py-2 border border-[var(--status-error-text)] text-danger rounded-md hover:bg-[var(--status-error-bg)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Remove Avatar
@@ -241,8 +241,8 @@ export const AvatarUploadModal = ({ isOpen, onClose, user, onSuccess }: AvatarUp
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-          <p className="text-xs text-gray-600 text-center">
+        <div className="px-6 py-4 bg-secondary border-t border-default rounded-b-lg">
+          <p className="text-xs text-secondary text-center">
             Your avatar will be resized to 256×256 pixels
           </p>
         </div>

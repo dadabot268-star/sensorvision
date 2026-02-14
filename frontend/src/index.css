@@ -928,6 +928,9 @@
   .health-status-fair { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
   .health-status-poor { color: #f97316; text-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
   .health-status-critical { color: #f43f5e; text-shadow: 0 0 20px rgba(244, 63, 94, 0.5); }
+  .health-status-healthy { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+  .health-status-at_risk { color: #00d4ff; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+  .health-status-degraded { color: #f59e0b; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
 
   /* Activity timeline scrollbar styling */
   .activity-timeline-scroll::-webkit-scrollbar {

@@ -1,48 +1,70 @@
 import { useMemo } from 'react';
-import { Device } from '../types';
+import { Link } from 'react-router-dom';
+import { Device, TelemetryPoint } from '../types';
 import { Card, CardBody } from './ui/Card';
-import { Activity, Cpu, Wifi, Zap } from 'lucide-react';
+import { Activity, Cpu, Wifi, Zap, Info } from 'lucide-react';
 import { clsx } from 'clsx';
+import { formatTimeAgo } from '../utils/timeUtils';
 
-// Health status configuration
-const HEALTH_CONFIG = {
-  EXCELLENT: { label: 'Excellent', color: '#10b981', minScore: 80 },
-  GOOD: { label: 'Good', color: '#00d4ff', minScore: 60 },
-  FAIR: { label: 'Fair', color: '#f59e0b', minScore: 40 },
-  POOR: { label: 'Poor', color: '#f97316', minScore: 20 },
-  CRITICAL: { label: 'Critical', color: '#f43f5e', minScore: 0 },
+const REPORTING_WINDOW_MINUTES = 5;
+
+// Reporting coverage configuration
+const COVERAGE_CONFIG = {
+  HEALTHY: { label: 'Healthy', color: '#10b981', minPercent: 95 },
+  AT_RISK: { label: 'At Risk', color: '#00d4ff', minPercent: 80 },
+  DEGRADED: { label: 'Degraded', color: '#f59e0b', minPercent: 60 },
+  CRITICAL: { label: 'Critical', color: '#f43f5e', minPercent: 0 },
 };
 
-type HealthStatus = keyof typeof HEALTH_CONFIG;
+type CoverageStatus = keyof typeof COVERAGE_CONFIG;
 
 interface FleetHealthGaugeProps {
   devices: Device[];
+  latestTelemetry?: Record<string, TelemetryPoint>;
   className?: string;
 }
 
-export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) => {
-  // Calculate fleet-wide health metrics
-  const fleetMetrics = useMemo(() => {
-    if (devices.length === 0) {
-      return {
-        averageHealth: 0,
-        healthStatus: 'CRITICAL' as HealthStatus,
-        totalDevices: 0,
-        onlineDevices: 0,
-        totalPower: 0,
-      };
-    }
+export const FleetHealthGauge = ({ devices, latestTelemetry = {}, className }: FleetHealthGaugeProps) => {
+  const parseTimestamp = (value: string | undefined): number | undefined => {
+    if (!value) return undefined;
+    const ms = new Date(value).getTime();
+    return Number.isNaN(ms) ? undefined : ms;
+  };
 
-    const devicesWithHealth = devices.filter(d => d.healthScore !== undefined);
-    const averageHealth = devicesWithHealth.length > 0
-      ? devicesWithHealth.reduce((sum, d) => sum + (d.healthScore || 0), 0) / devicesWithHealth.length
+  // Calculate reporting coverage metrics
+  const fleetMetrics = useMemo(() => {
+    const totalDevices = devices.length;
+    const now = Date.now();
+    const windowMs = REPORTING_WINDOW_MINUTES * 60 * 1000;
+
+    const getLastSeenMs = (device: Device): number | undefined => {
+      const deviceSeen = parseTimestamp(device.lastSeenAt);
+      const telemetrySeen = parseTimestamp(latestTelemetry[device.externalId]?.timestamp);
+
+      if (deviceSeen === undefined && telemetrySeen === undefined) return undefined;
+      return Math.max(deviceSeen ?? 0, telemetrySeen ?? 0);
+    };
+
+    const reportingDevices = devices.filter((device) => {
+      const lastSeenMs = getLastSeenMs(device);
+      if (lastSeenMs === undefined) return false;
+      return now - lastSeenMs <= windowMs;
+    });
+
+    const staleDevices = devices.filter((device) => {
+      const lastSeenMs = getLastSeenMs(device);
+      if (lastSeenMs === undefined) return true;
+      return now - lastSeenMs > windowMs;
+    });
+
+    const coveragePercent = totalDevices > 0
+      ? Math.round((reportingDevices.length / totalDevices) * 100)
       : 0;
 
-    // Determine health status based on average score
-    let healthStatus: HealthStatus = 'CRITICAL';
-    for (const [status, config] of Object.entries(HEALTH_CONFIG)) {
-      if (averageHealth >= config.minScore) {
-        healthStatus = status as HealthStatus;
+    let coverageStatus: CoverageStatus = 'CRITICAL';
+    for (const [status, config] of Object.entries(COVERAGE_CONFIG)) {
+      if (coveragePercent >= config.minPercent) {
+        coverageStatus = status as CoverageStatus;
         break;
       }
     }
@@ -50,25 +72,26 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
     const onlineDevices = devices.filter(d => d.status === 'ONLINE').length;
 
     return {
-      averageHealth: Math.round(averageHealth),
-      healthStatus,
-      totalDevices: devices.length,
+      coveragePercent,
+      coverageStatus,
+      totalDevices,
+      reportingDevices,
+      staleDevices,
       onlineDevices,
-      totalPower: 0, // This would come from telemetry data
     };
-  }, [devices]);
+  }, [devices, latestTelemetry]);
 
   // SVG gauge calculations
   const size = 180;
   const strokeWidth = 14;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const healthPercentage = fleetMetrics.averageHealth / 100;
+  const healthPercentage = fleetMetrics.coveragePercent / 100;
   const strokeDashoffset = circumference * (1 - healthPercentage);
 
-  const healthConfig = HEALTH_CONFIG[fleetMetrics.healthStatus];
+  const healthConfig = COVERAGE_CONFIG[fleetMetrics.coverageStatus];
 
-  const healthStatusClass = `health-status-${fleetMetrics.healthStatus.toLowerCase()}`;
+  const healthStatusClass = `health-status-${fleetMetrics.coverageStatus.toLowerCase()}`;
 
   return (
     <Card className={clsx('fleet-health-card', className)}>
@@ -78,8 +101,16 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
           <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 shadow-lg shadow-emerald-500/10">
             <Activity className="h-5 w-5 text-emerald-400" />
           </div>
-          <h2 className="text-lg font-semibold text-primary">Fleet Health</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-primary">Reporting Coverage</h2>
+            <span title="Based on last telemetry received in the last 5 minutes. Improve by restoring connectivity or increasing telemetry frequency.">
+              <Info className="h-4 w-4 text-secondary cursor-help" />
+            </span>
+          </div>
         </div>
+        <p className="text-sm text-secondary mb-4">
+          {fleetMetrics.reportingDevices.length} of {fleetMetrics.totalDevices} devices reporting (last {REPORTING_WINDOW_MINUTES} min)
+        </p>
 
         {/* Circular Gauge */}
         <div className="flex justify-center mb-6">
@@ -89,7 +120,7 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
               height={size}
               className="transform -rotate-90"
               role="img"
-              aria-label={`Fleet health: ${fleetMetrics.averageHealth}%`}
+              aria-label={`Reporting coverage: ${fleetMetrics.coveragePercent}%`}
             >
               <defs>
                 <linearGradient id="fleetHealthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -120,7 +151,7 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke={fleetMetrics.averageHealth > 60 ? 'url(#fleetHealthGradient)' : healthConfig.color}
+                stroke={fleetMetrics.coveragePercent >= 80 ? 'url(#fleetHealthGradient)' : healthConfig.color}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -134,7 +165,7 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
               <span
                 className="text-5xl font-bold font-mono fleet-health-value"
                 style={{
-                  background: fleetMetrics.averageHealth > 60
+                  background: fleetMetrics.coveragePercent >= 80
                     ? 'linear-gradient(135deg, #10b981, #00d4ff)'
                     : healthConfig.color,
                   WebkitBackgroundClip: 'text',
@@ -142,7 +173,7 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
                   backgroundClip: 'text',
                 }}
               >
-                {fleetMetrics.averageHealth}%
+                {fleetMetrics.coveragePercent}%
               </span>
               <span className={clsx(
                 'text-sm font-bold uppercase tracking-widest mt-1',
@@ -164,19 +195,48 @@ export const FleetHealthGauge = ({ devices, className }: FleetHealthGaugeProps) 
           />
           <MiniStat
             icon={<Wifi className="h-4 w-4" />}
-            value={fleetMetrics.onlineDevices}
-            label="Online"
+            value={fleetMetrics.reportingDevices.length}
+            label="Reporting"
             valueClassName="text-emerald-400"
             iconColor="text-emerald-400"
           />
           <MiniStat
             icon={<Zap className="h-4 w-4" />}
-            value={fleetMetrics.totalDevices > 0 ? `${Math.round((fleetMetrics.onlineDevices / fleetMetrics.totalDevices) * 100)}%` : '0%'}
-            label="Uptime"
+            value={fleetMetrics.staleDevices.length}
+            label="Stale"
             valueClassName="text-amber-400"
             iconColor="text-amber-400"
           />
         </div>
+
+        {fleetMetrics.staleDevices.length > 0 && (
+          <div className="mt-6 rounded-lg border border-default bg-hover/60 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-primary">Improve coverage</span>
+              <Link to="/devices" className="text-xs text-link hover:underline">
+                View devices
+              </Link>
+            </div>
+            <div className="space-y-1 text-xs text-secondary">
+              {fleetMetrics.staleDevices.slice(0, 3).map((device) => {
+                const deviceSeen = parseTimestamp(device.lastSeenAt);
+                const telemetrySeen = parseTimestamp(latestTelemetry[device.externalId]?.timestamp);
+                const lastSeenMs = deviceSeen === undefined && telemetrySeen === undefined
+                  ? undefined
+                  : Math.max(deviceSeen ?? 0, telemetrySeen ?? 0);
+                const lastSeen = lastSeenMs ? new Date(lastSeenMs).toISOString() : undefined;
+                return (
+                  <div key={device.externalId} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{device.name || device.externalId}</span>
+                    <span className="text-tertiary font-mono">
+                      {lastSeen ? `Last seen ${formatTimeAgo(lastSeen)}` : 'Never seen'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardBody>
     </Card>
   );
